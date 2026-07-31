@@ -552,9 +552,15 @@
                     <input type="file" id="form-prod-file" accept="image/*" onchange="app.handlePhotoUpload(this)" class="w-full text-[10px] text-payGray bg-slate-100 p-1.5 rounded-xl border border-tealApp-200">
                 </div>
 
-                <button type="submit" class="w-full bg-tealApp-500 text-white font-black py-2.5 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition mt-2">
-                    Simpan Data Produk
-                </button>
+                <div class="flex gap-2 mt-2">
+                    <button type="button" id="btn-delete-prod" onclick="app.deleteProduct(document.getElementById('form-prod-id').value)" class="hidden flex-1 bg-rose-50 text-rose-600 border border-rose-200 font-bold py-2.5 rounded-2xl text-xs active:scale-98 transition flex items-center justify-center space-x-1">
+                        <i class="ph ph-trash text-sm"></i>
+                        <span>Hapus</span>
+                    </button>
+                    <button type="submit" class="flex-1 bg-tealApp-500 text-white font-black py-2.5 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition">
+                        Simpan Data Produk
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -1073,9 +1079,14 @@
                                 <p class="text-[9px] text-payGray">SKU: ${p.sku} • Stok: ${p.stock}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-black text-tealApp-700">${this.formatRupiah(p.price)}</p>
-                            <button onclick="app.openProductModal('${p.id}')" class="text-[9px] text-tealApp-500 font-bold">Edit</button>
+                        <div class="text-right flex items-center space-x-1.5">
+                            <p class="font-black text-tealApp-700 mr-1 text-xs">${this.formatRupiah(p.price)}</p>
+                            <button onclick="app.openProductModal('${p.id}')" class="px-2 py-1 bg-tealApp-100 text-tealApp-700 rounded-lg text-[10px] font-bold flex items-center gap-0.5 active:scale-95 transition">
+                                <i class="ph ph-pencil-simple text-xs"></i> Edit
+                            </button>
+                            <button onclick="app.deleteProduct('${p.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold flex items-center gap-0.5 active:scale-95 transition">
+                                <i class="ph ph-trash text-xs"></i> Hapus
+                            </button>
                         </div>
                     `;
                     container.appendChild(div);
@@ -1101,9 +1112,14 @@
                                 <p class="text-[9px] text-payGray">SKU: ${p.sku} • Stok: ${p.stock}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-black text-tealApp-700">${this.formatRupiah(p.price)}</p>
-                            <button onclick="app.openProductModal('${p.id}')" class="text-[9px] text-tealApp-500 font-bold">Edit</button>
+                        <div class="text-right flex items-center space-x-1.5">
+                            <p class="font-black text-tealApp-700 mr-1 text-xs">${this.formatRupiah(p.price)}</p>
+                            <button onclick="app.openProductModal('${p.id}')" class="px-2 py-1 bg-tealApp-100 text-tealApp-700 rounded-lg text-[10px] font-bold flex items-center gap-0.5 active:scale-95 transition">
+                                <i class="ph ph-pencil-simple text-xs"></i> Edit
+                            </button>
+                            <button onclick="app.deleteProduct('${p.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold flex items-center gap-0.5 active:scale-95 transition">
+                                <i class="ph ph-trash text-xs"></i> Hapus
+                            </button>
                         </div>
                     `;
                     container.appendChild(div);
@@ -1111,9 +1127,15 @@
             }
 
             openProductModal(id = null) {
+                const deleteBtn = document.getElementById('btn-delete-prod');
+                const modalTitle = document.getElementById('product-modal-title');
+
                 if (id) {
                     const p = this.products.find(item => item.id === id);
                     if (!p) return;
+                    if (modalTitle) modalTitle.innerText = 'Edit Produk';
+                    if (deleteBtn) deleteBtn.classList.remove('hidden');
+
                     document.getElementById('form-prod-id').value = p.id;
                     document.getElementById('form-prod-name').value = p.name;
                     document.getElementById('form-prod-sku').value = p.sku;
@@ -1123,6 +1145,9 @@
                     document.getElementById('form-prod-stock').value = p.stock;
                     document.getElementById('form-prod-img').value = p.img;
                 } else {
+                    if (modalTitle) modalTitle.innerText = 'Tambah Produk Baru';
+                    if (deleteBtn) deleteBtn.classList.add('hidden');
+
                     document.getElementById('form-prod-id').value = '';
                     document.getElementById('form-prod-name').value = '';
                     document.getElementById('form-prod-sku').value = 'SKU-' + Math.floor(Math.random() * 89999 + 10000);
@@ -1132,6 +1157,33 @@
                     document.getElementById('form-prod-img').value = '📦';
                 }
                 this.openModal('modal-product-form');
+            }
+
+            deleteProduct(id) {
+                if (!id) return;
+                const index = this.products.findIndex(p => p.id === id);
+                if (index === -1) return;
+
+                const deletedName = this.products[index].name;
+                this.products.splice(index, 1);
+                this.saveToStorage();
+
+                if (this.sheetUrl && !this.sheetUrl.includes('GANTI_DENGAN_ID')) {
+                    fetch(this.sheetUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'deleteProduct',
+                            productId: id
+                        })
+                    }).catch(() => {});
+                }
+
+                this.closeModal('modal-product-form');
+                this.renderProductTable();
+                if (this.activePage === 'pos') this.initPOSPage();
+                this.showToast(`Produk "${deletedName}" berhasil dihapus`, 'info');
             }
 
             saveProduct() {
