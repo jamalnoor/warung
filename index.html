@@ -79,6 +79,12 @@
             #printable-receipt, #printable-receipt * { visibility: visible; }
             #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
         }
+        /* Style reader camera container */
+        #reader video {
+            object-fit: cover !important;
+            border-radius: 1rem;
+            width: 100% !important;
+        }
     </style>
 </head>
 <body class="bg-slate-900 h-full flex items-center justify-center font-sans antialiased select-none overflow-hidden text-slate-800">
@@ -757,7 +763,7 @@
                 <span>Scan Barcode Kemasan</span>
                 <button onclick="app.stopScanner()"><i class="ph ph-x text-base"></i></button>
             </div>
-            <div id="reader" class="w-full bg-black min-h-[200px]"></div>
+            <div id="reader" class="w-full bg-black min-h-[220px]"></div>
         </div>
     </div>
 
@@ -796,7 +802,7 @@
                 this.paymentMethod = 'cash';
                 this.scanTarget = 'pos';
                 this.salesChart = null;
-                this.html5QrcodeScanner = null;
+                this.html5QrCode = null;
                 this.init();
             }
 
@@ -961,7 +967,7 @@
                 if (tmsg) tmsg.innerText = msg;
                 if (toast) {
                     toast.className = `absolute top-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full shadow-pay-md text-white text-[11px] font-black transition-all duration-300 opacity-100 ${isError ? 'bg-rose-500' : 'bg-tealApp-500'}`;
-                    setTimeout(() => toast.classList.replace('opacity-100', 'opacity-0'), 2200);
+                    setTimeout(() => toast.classList.replace('opacity-100', 'opacity-0'), 2500);
                 }
             }
 
@@ -1360,41 +1366,78 @@
                 document.getElementById(id)?.classList.remove('hidden');
             }
 
-            startScanner(target = 'pos') {
+            async startScanner(target = 'pos') {
                 this.scanTarget = target;
                 const modal = document.getElementById('modal-scanner');
                 if (modal) {
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
                 }
-                if (typeof Html5QrcodeScanner !== 'undefined') {
-                    if (this.html5QrcodeScanner) this.stopScanner();
-                    this.html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 180, height: 180 } }, false);
-                    this.html5QrcodeScanner.render((scannedText) => {
-                        this.stopScanner();
-                        if (this.scanTarget === 'sku') {
-                            const skuInput = document.getElementById('form-prod-sku');
-                            if (skuInput) skuInput.value = scannedText;
-                            this.showToast(`Barcode: ${scannedText}`);
-                        } else {
-                            const p = this.products.find(prod => prod.sku === scannedText);
-                            if (p) {
-                                this.addToCart(p);
-                                this.showToast(`Scan: ${p.name}`);
-                            } else {
-                                this.showToast(`SKU ${scannedText} tidak ada`, true);
+
+                // Hentikan instance scanner aktif jika ada
+                if (this.html5QrCode) {
+                    await this.stopScanner();
+                }
+
+                if (typeof Html5Qrcode !== 'undefined') {
+                    try {
+                        this.html5QrCode = new Html5Qrcode("reader");
+                        const config = { fps: 15, qrbox: { width: 200, height: 200 } };
+
+                        // Utamakan Kamera Belakang (facingMode: "environment")
+                        await this.html5QrCode.start(
+                            { facingMode: "environment" },
+                            config,
+                            (scannedText) => {
+                                this.stopScanner();
+                                if (this.scanTarget === 'sku') {
+                                    const skuInput = document.getElementById('form-prod-sku');
+                                    if (skuInput) skuInput.value = scannedText;
+                                    this.showToast(`Barcode Terdeteksi: ${scannedText}`);
+                                } else {
+                                    const p = this.products.find(prod => prod.sku === scannedText);
+                                    if (p) {
+                                        this.addToCart(p);
+                                        this.showToast(`Scan: ${p.name}`);
+                                    } else {
+                                        this.showToast(`SKU ${scannedText} tidak ada di katalog`, true);
+                                    }
+                                }
+                            },
+                            () => {
+                                // Ignore frame parsing errors
                             }
+                        );
+                    } catch (err) {
+                        console.error("Kamera Error:", err);
+                        let errMsg = "Kamera tidak dapat diakses.";
+                        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                            errMsg = "Akses kamera memerlukan jaringan HTTPS!";
+                        } else if (err?.name === 'NotAllowedError' || err?.toString().includes('Permission')) {
+                            errMsg = "Izin kamera ditolak. Aktifkan izin kamera di browser!";
+                        } else if (err?.name === 'NotFoundError') {
+                            errMsg = "Kamera belakang tidak ditemukan!";
                         }
-                    }, () => {});
+                        this.showToast(errMsg, true);
+                        this.closeModal('modal-scanner');
+                    }
                 } else {
-                    this.showToast('Scanner tidak siap', true);
+                    this.showToast('Pustaka Scanner belum siap', true);
+                    this.closeModal('modal-scanner');
                 }
             }
 
-            stopScanner() {
-                if (this.html5QrcodeScanner) {
-                    this.html5QrcodeScanner.clear().catch(() => {});
-                    this.html5QrcodeScanner = null;
+            async stopScanner() {
+                if (this.html5QrCode) {
+                    try {
+                        if (this.html5QrCode.isScanning) {
+                            await this.html5QrCode.stop();
+                        }
+                        this.html5QrCode.clear();
+                    } catch (e) {
+                        console.error("Gagal menghentikan scanner:", e);
+                    }
+                    this.html5QrCode = null;
                 }
                 this.closeModal('modal-scanner');
             }
