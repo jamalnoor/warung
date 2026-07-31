@@ -550,6 +550,10 @@
                 <div>
                     <label class="text-payGray font-bold block mb-0.5">Unggah Foto Kemasan (Opsional)</label>
                     <input type="file" id="form-prod-file" accept="image/*" onchange="app.handlePhotoUpload(this)" class="w-full text-[10px] text-payGray bg-slate-100 p-1.5 rounded-xl border border-tealApp-200">
+                    <div id="photo-preview-container" class="mt-2 hidden flex items-center space-x-2">
+                        <img id="photo-preview-img" src="" class="w-12 h-12 object-cover rounded-xl border border-tealApp-200 shadow-sm">
+                        <span class="text-[10px] text-tealApp-700 font-bold">Foto kemasan terpilih</span>
+                    </div>
                 </div>
 
                 <div class="flex gap-2 mt-2">
@@ -619,23 +623,18 @@
                 this.activePage = 'dashboard';
                 this.scanTarget = 'pos';
                 this.paymentMethod = 'cash';
-                this.html5QrcodeScanner = null;
+                this.html5Qrcode = null;
 
                 this.init();
             }
 
             init() {
-                this.saveToStorage();
                 this.updateUserUI();
-                
                 if (this.user && this.user.username) {
                     this.navigateTo('dashboard');
                 } else {
                     this.navigateTo('landing');
                 }
-
-                const urlInput = document.getElementById('set-appscript-url');
-                if (urlInput) urlInput.value = this.sheetUrl;
             }
 
             saveToStorage() {
@@ -768,6 +767,14 @@
                 return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
             }
 
+            renderProductImage(img, customClass = "w-full h-full object-cover") {
+                if (!img) return '<span class="text-2xl">📦</span>';
+                if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:image/')) {
+                    return `<img src="${img}" alt="Foto Produk" class="${customClass}" onerror="this.onerror=null; this.outerHTML='<span class=\'text-2xl\'>📦</span>';">`;
+                }
+                return `<span class="text-2xl">${img}</span>`;
+            }
+
             renderDashboardPage() {
                 const totalOmzet = this.transactions.reduce((sum, t) => sum + t.total, 0);
                 const totalLaba = this.transactions.reduce((sum, t) => sum + (t.profit || 0), 0);
@@ -794,11 +801,13 @@
                     const slow = sorted.slice(-2);
 
                     fast.forEach(p => {
-                        fastContainer.innerHTML += `<div class="truncate">• ${p.img} ${p.name}</div>`;
+                        const icon = (p.img && (p.img.startsWith('http') || p.img.startsWith('data:'))) ? '🖼️' : (p.img || '📦');
+                        fastContainer.innerHTML += `<div class="truncate">• ${icon} ${p.name}</div>`;
                     });
 
                     slow.forEach(p => {
-                        slowContainer.innerHTML += `<div class="truncate">• ${p.img} ${p.name}</div>`;
+                        const icon = (p.img && (p.img.startsWith('http') || p.img.startsWith('data:'))) ? '🖼️' : (p.img || '📦');
+                        slowContainer.innerHTML += `<div class="truncate">• ${icon} ${p.name}</div>`;
                     });
                 }
 
@@ -867,7 +876,9 @@
                     div.onclick = () => this.addToCart(p);
                     div.innerHTML = `
                         <div class="flex justify-between items-start">
-                            <span class="text-2xl">${p.img}</span>
+                            <div class="w-10 h-10 rounded-xl bg-tealApp-100/50 flex items-center justify-center overflow-hidden shrink-0">
+                                ${this.renderProductImage(p.img, "w-full h-full object-cover")}
+                            </div>
                             <span class="text-[9px] bg-tealApp-100 text-tealApp-700 px-1.5 py-0.5 rounded-md font-bold">Stok: ${p.stock}</span>
                         </div>
                         <div>
@@ -1073,7 +1084,9 @@
                     div.className = 'p-3 flex justify-between items-center';
                     div.innerHTML = `
                         <div class="flex items-center space-x-2.5">
-                            <span class="text-2xl">${p.img}</span>
+                            <div class="w-10 h-10 rounded-xl bg-tealApp-100/50 flex items-center justify-center overflow-hidden shrink-0">
+                                ${this.renderProductImage(p.img, "w-full h-full object-cover")}
+                            </div>
                             <div>
                                 <p class="font-extrabold text-payDark">${p.name}</p>
                                 <p class="text-[9px] text-payGray">SKU: ${p.sku} • Stok: ${p.stock}</p>
@@ -1106,7 +1119,9 @@
                     div.className = 'p-3 flex justify-between items-center';
                     div.innerHTML = `
                         <div class="flex items-center space-x-2.5">
-                            <span class="text-2xl">${p.img}</span>
+                            <div class="w-10 h-10 rounded-xl bg-tealApp-100/50 flex items-center justify-center overflow-hidden shrink-0">
+                                ${this.renderProductImage(p.img, "w-full h-full object-cover")}
+                            </div>
                             <div>
                                 <p class="font-extrabold text-payDark">${p.name}</p>
                                 <p class="text-[9px] text-payGray">SKU: ${p.sku} • Stok: ${p.stock}</p>
@@ -1129,6 +1144,8 @@
             openProductModal(id = null) {
                 const deleteBtn = document.getElementById('btn-delete-prod');
                 const modalTitle = document.getElementById('product-modal-title');
+                const previewContainer = document.getElementById('photo-preview-container');
+                const previewImg = document.getElementById('photo-preview-img');
 
                 if (id) {
                     const p = this.products.find(item => item.id === id);
@@ -1144,9 +1161,17 @@
                     document.getElementById('form-prod-price').value = p.price;
                     document.getElementById('form-prod-stock').value = p.stock;
                     document.getElementById('form-prod-img').value = p.img;
+
+                    if (previewContainer && previewImg && (p.img.startsWith('http') || p.img.startsWith('data:image'))) {
+                        previewImg.src = p.img;
+                        previewContainer.classList.remove('hidden');
+                    } else if (previewContainer) {
+                        previewContainer.classList.add('hidden');
+                    }
                 } else {
                     if (modalTitle) modalTitle.innerText = 'Tambah Produk Baru';
                     if (deleteBtn) deleteBtn.classList.add('hidden');
+                    if (previewContainer) previewContainer.classList.add('hidden');
 
                     document.getElementById('form-prod-id').value = '';
                     document.getElementById('form-prod-name').value = '';
@@ -1213,12 +1238,21 @@
 
             handlePhotoUpload(input) {
                 if (input.files && input.files[0]) {
+                    const file = input.files[0];
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        document.getElementById('form-prod-img').value = '🖼️';
+                        const base64Data = e.target.result;
+                        document.getElementById('form-prod-img').value = base64Data;
+                        
+                        const previewImg = document.getElementById('photo-preview-img');
+                        const previewContainer = document.getElementById('photo-preview-container');
+                        if (previewImg && previewContainer) {
+                            previewImg.src = base64Data;
+                            previewContainer.classList.remove('hidden');
+                        }
                         this.showToast('Foto kemasan siap disimpan!', 'info');
                     };
-                    reader.readAsDataURL(input.files[0]);
+                    reader.readAsDataURL(file);
                 }
             }
 
@@ -1275,40 +1309,87 @@
                 this.showToast('Pengaturan tersimpan!', 'success');
             }
 
-            startScanner(target = 'pos') {
+            async startScanner(target = 'pos') {
                 this.scanTarget = target;
                 if (target === 'pos') {
                     this.navigateTo('pos');
                 }
                 this.openModal('modal-scanner');
 
+                // Clean up previous camera session before starting a new one
+                await this.stopScannerTracksOnly();
+
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     this.showToast('Akses kamera tidak didukung atau memerlukan HTTPS', 'error');
                     return;
                 }
 
-                this.html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 220, height: 220 } }, false);
-                this.html5QrcodeScanner.render((scannedText) => {
-                    this.stopScanner();
-                    if (this.scanTarget === 'sku') {
-                        const skuInput = document.getElementById('form-prod-sku');
-                        if (skuInput) skuInput.value = scannedText;
-                        this.showToast(`SKU Barcode: ${scannedText}`, 'success');
-                    } else {
-                        const p = this.products.find(prod => prod.sku.toLowerCase() === scannedText.toLowerCase());
-                        if (p) {
-                            this.addToCart(p);
+                const readerEl = document.getElementById('reader');
+                if (readerEl) readerEl.innerHTML = '';
+
+                try {
+                    this.html5Qrcode = new Html5Qrcode("reader");
+                    const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+                    const onScanSuccess = (scannedText) => {
+                        this.stopScanner();
+                        if (this.scanTarget === 'sku') {
+                            const skuInput = document.getElementById('form-prod-sku');
+                            if (skuInput) skuInput.value = scannedText;
+                            this.showToast(`SKU Barcode: ${scannedText}`, 'success');
                         } else {
-                            this.showToast(`SKU Barcode ${scannedText} belum terdaftar`, 'error');
+                            const p = this.products.find(prod => prod.sku.toLowerCase() === scannedText.toLowerCase());
+                            if (p) {
+                                this.addToCart(p);
+                            } else {
+                                this.showToast(`SKU Barcode ${scannedText} belum terdaftar`, 'error');
+                            }
+                        }
+                    };
+
+                    // Try environment facing mode first, fallback to device list if needed
+                    try {
+                        await this.html5Qrcode.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+                    } catch (err1) {
+                        console.warn("Facing mode environment failed, searching back cameras...", err1);
+                        const cameras = await Html5Qrcode.getCameras().catch(() => []);
+                        if (cameras && cameras.length > 0) {
+                            const backCam = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('rear')) || cameras[0];
+                            await this.html5Qrcode.start(backCam.id, config, onScanSuccess, () => {});
+                        } else {
+                            throw err1;
                         }
                     }
-                }, () => {});
+                } catch (err) {
+                    console.error("Camera access error:", err);
+                    let msg = "Kamera tidak dapat dibuka.";
+                    if (err && (err.name === "NotReadableError" || String(err).includes("NotReadableError"))) {
+                        msg = "Kamera sedang digunakan aplikasi lain atau terkunci. Tutup tab/aplikasi lain lalu coba lagi.";
+                    } else if (err && err.name === "NotAllowedError") {
+                        msg = "Izin kamera ditolak. Berikan izin akses kamera pada browser Anda.";
+                    }
+                    this.showToast(msg, 'error');
+                }
             }
 
-            stopScanner() {
-                if (this.html5QrcodeScanner) {
-                    this.html5QrcodeScanner.clear().catch(() => {});
+            async stopScannerTracksOnly() {
+                if (this.html5Qrcode) {
+                    try {
+                        if (this.html5Qrcode.isScanning) {
+                            await this.html5Qrcode.stop();
+                        }
+                        this.html5Qrcode.clear();
+                    } catch (e) {
+                        console.warn("Scanner cleanup warning:", e);
+                    }
+                    this.html5Qrcode = null;
                 }
+                const readerEl = document.getElementById('reader');
+                if (readerEl) readerEl.innerHTML = '';
+            }
+
+            async stopScanner() {
+                await this.stopScannerTracksOnly();
                 this.closeModal('modal-scanner');
             }
 
