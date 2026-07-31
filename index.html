@@ -70,7 +70,19 @@
         @media print {
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt * { visibility: visible; }
-            #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+            #printable-receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 80mm;
+                margin: 0 auto;
+                padding: 12px;
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
         }
     </style>
 </head>
@@ -964,24 +976,83 @@
                 const container = document.getElementById('printable-receipt');
                 if (!container) return;
 
+                const dateObj = new Date(tx.date || Date.now());
+                const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                const totalQty = tx.items.reduce((sum, item) => sum + item.qty, 0);
+                const cashGiven = tx.cashGiven || tx.total;
+                const change = Math.max(0, cashGiven - tx.total);
+
                 let itemsHTML = tx.items.map(i => `
-                    <div class="flex justify-between">
-                        <span>${i.name} (${i.qty}x)</span>
-                        <span>${this.formatRupiah(i.price * i.qty)}</span>
+                    <div class="space-y-0.5 my-1.5">
+                        <div class="font-bold uppercase tracking-tight text-slate-900 truncate">${i.name}</div>
+                        <div class="flex justify-between text-[9px] text-slate-700">
+                            <span>${i.qty} PCS x ${this.formatRupiah(i.price)}</span>
+                            <span class="font-extrabold text-slate-900">${this.formatRupiah(i.price * i.qty)}</span>
+                        </div>
                     </div>
                 `).join('');
 
                 container.innerHTML = `
-                    <div class="text-center pb-1 border-b border-dashed border-slate-300">
-                        <p class="font-bold uppercase">${this.user.shop}</p>
-                        <p class="text-[9px]">ID: ${tx.id}</p>
+                    <!-- HEADER MINI MARKET INDOMARET STYLE -->
+                    <div class="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2">
+                        <p class="font-black text-xs tracking-wider uppercase text-slate-900">${this.user.shop || 'WARUNG INDOMARKET'}</p>
+                        <p class="text-[8px] uppercase font-bold text-slate-600">PT. WARUNG RETAIL INDONESIA</p>
+                        <p class="text-[8px] text-slate-500">JL. RAYA UTAMA NO. 88, INDONESIA</p>
+                        <p class="text-[8px] text-slate-500">NPWP: 01.888.777.6-901.000</p>
                     </div>
-                    <div class="py-1 border-b border-dashed border-slate-300 space-y-1">
+
+                    <!-- META INFORMASI STRUK -->
+                    <div class="py-1.5 border-b border-dashed border-slate-400 text-[9px] space-y-0.5 text-slate-800 font-mono">
+                        <div class="flex justify-between">
+                            <span>TGL : ${dateStr} ${timeStr}</span>
+                            <span>NO: ${tx.id}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>KASIR: ${(this.user.username || 'KASIR').toUpperCase()}</span>
+                            <span>METODE: ${tx.paymentMethod}</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST ITEM BELANJA -->
+                    <div class="py-1 border-b border-dashed border-slate-400 divide-y divide-slate-100 font-mono">
                         ${itemsHTML}
                     </div>
-                    <div class="flex justify-between font-bold text-xs pt-1">
-                        <span>TOTAL</span>
-                        <span>${this.formatRupiah(tx.total)}</span>
+
+                    <!-- RINGKASAN TOTAL BELANJA -->
+                    <div class="py-2 border-b border-dashed border-slate-400 text-[10px] space-y-1 font-mono">
+                        <div class="flex justify-between font-black text-slate-900">
+                            <span>TOTAL BELANJA</span>
+                            <span class="text-xs">${this.formatRupiah(tx.total)}</span>
+                        </div>
+                        ${tx.paymentMethod === 'TUNAI' ? `
+                        <div class="flex justify-between text-[9px] text-slate-700">
+                            <span>TUNAI / BAYAR</span>
+                            <span>${this.formatRupiah(cashGiven)}</span>
+                        </div>
+                        <div class="flex justify-between text-[9px] text-slate-700">
+                            <span>KEMBALI</span>
+                            <span>${this.formatRupiah(change)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="flex justify-between text-[9px] text-slate-500 pt-1">
+                            <span>TOTAL ITEM</span>
+                            <span class="font-bold">${totalQty} PCS</span>
+                        </div>
+                    </div>
+
+                    <!-- FOOTER KONSUMEN & BARCODE -->
+                    <div class="text-center pt-2 space-y-1 text-[8px] text-slate-700 uppercase font-mono">
+                        <p class="font-bold">HARGA SUDAH TERMASUK PPN 11%</p>
+                        <p class="font-semibold">TERIMA KASIH & SELAMAT BELANJA KEMBALI</p>
+                        <p class="text-[7px] text-slate-500">LAYANAN KONSUMEN: 1500-280 / WWW.WARUNGPOS.CO.ID</p>
+
+                        <!-- THERMAL BARCODE SIMULATION -->
+                        <div class="pt-2 flex flex-col items-center justify-center">
+                            <div class="h-7 w-4/5 bg-[repeating-linear-gradient(90deg,#000,#000_2px,#fff_2px,#fff_4px,#000_4px,#000_7px)] opacity-90 rounded-sm"></div>
+                            <span class="text-[8px] font-mono tracking-widest mt-1 text-slate-900 font-bold">${tx.id}</span>
+                        </div>
                     </div>
                 `;
             }
