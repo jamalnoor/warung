@@ -616,11 +616,12 @@
             constructor() {
                 this.products = JSON.parse(localStorage.getItem('wpai_products')) || INITIAL_PRODUCTS;
                 this.transactions = JSON.parse(localStorage.getItem('wpai_transactions')) || [];
-                this.user = JSON.parse(localStorage.getItem('wpai_user')) || { name: 'jamalnoor', shop: 'Warung Jamal', username: 'jamalnoor' };
+                // Default ke null jika belum ada user tersimpan agar masuk Landing Page lebih dahulu
+                this.user = JSON.parse(localStorage.getItem('wpai_user')) || null;
                 this.sheetUrl = localStorage.getItem('wpai_sheet_url') || WEB_APP_EXEC_URL;
                 
                 this.cart = [];
-                this.activePage = 'dashboard';
+                this.activePage = 'landing';
                 this.scanTarget = 'pos';
                 this.paymentMethod = 'cash';
                 this.html5Qrcode = null;
@@ -640,18 +641,22 @@
             saveToStorage() {
                 localStorage.setItem('wpai_products', JSON.stringify(this.products));
                 localStorage.setItem('wpai_transactions', JSON.stringify(this.transactions));
-                localStorage.setItem('wpai_user', JSON.stringify(this.user));
+                if (this.user) {
+                    localStorage.setItem('wpai_user', JSON.stringify(this.user));
+                } else {
+                    localStorage.removeItem('wpai_user');
+                }
                 localStorage.setItem('wpai_sheet_url', this.sheetUrl);
             }
 
             updateUserUI() {
                 const nameEl = document.getElementById('user-display-name');
                 const shopEl = document.getElementById('user-display-shop');
-                if (nameEl) nameEl.innerText = this.user.shop || 'Warung POS AI';
-                if (shopEl) shopEl.innerText = `Kasir: ${this.user.username || 'Kasir'}`;
+                if (nameEl) nameEl.innerText = (this.user && this.user.shop) ? this.user.shop : 'Warung POS AI';
+                if (shopEl) shopEl.innerText = `Kasir: ${(this.user && this.user.username) ? this.user.username : 'Kasir'}`;
 
                 const storeNameInput = document.getElementById('set-store-name');
-                if (storeNameInput) storeNameInput.value = this.user.shop || '';
+                if (storeNameInput) storeNameInput.value = (this.user && this.user.shop) ? this.user.shop : '';
             }
 
             handleRegister() {
@@ -697,7 +702,7 @@
             }
 
             handleLogout() {
-                this.user = { name: '', shop: '', username: '' };
+                this.user = null;
                 this.cart = [];
                 localStorage.removeItem('wpai_user');
                 this.updateUserUI();
@@ -1146,6 +1151,9 @@
                 const modalTitle = document.getElementById('product-modal-title');
                 const previewContainer = document.getElementById('photo-preview-container');
                 const previewImg = document.getElementById('photo-preview-img');
+                const fileInput = document.getElementById('form-prod-file');
+
+                if (fileInput) fileInput.value = '';
 
                 if (id) {
                     const p = this.products.find(item => item.id === id);
@@ -1156,13 +1164,13 @@
                     document.getElementById('form-prod-id').value = p.id;
                     document.getElementById('form-prod-name').value = p.name;
                     document.getElementById('form-prod-sku').value = p.sku;
-                    document.getElementById('form-prod-category').value = p.category;
+                    document.getElementById('form-prod-category').value = p.category || 'Makanan';
                     document.getElementById('form-prod-cost').value = p.cost;
                     document.getElementById('form-prod-price').value = p.price;
                     document.getElementById('form-prod-stock').value = p.stock;
-                    document.getElementById('form-prod-img').value = p.img;
+                    document.getElementById('form-prod-img').value = p.img || '📦';
 
-                    if (previewContainer && previewImg && (p.img.startsWith('http') || p.img.startsWith('data:image'))) {
+                    if (previewContainer && previewImg && (p.img && (p.img.startsWith('http') || p.img.startsWith('data:image')))) {
                         previewImg.src = p.img;
                         previewContainer.classList.remove('hidden');
                     } else if (previewContainer) {
@@ -1175,7 +1183,8 @@
 
                     document.getElementById('form-prod-id').value = '';
                     document.getElementById('form-prod-name').value = '';
-                    document.getElementById('form-prod-sku').value = 'SKU-' + Math.floor(Math.random() * 89999 + 10000);
+                    document.getElementById('form-prod-sku').value = '899' + Math.floor(Math.random() * 899999999 + 100000000);
+                    document.getElementById('form-prod-category').value = 'Makanan';
                     document.getElementById('form-prod-cost').value = '';
                     document.getElementById('form-prod-price').value = '';
                     document.getElementById('form-prod-stock').value = '20';
@@ -1212,28 +1221,59 @@
             }
 
             saveProduct() {
-                const id = document.getElementById('form-prod-id').value;
-                const name = document.getElementById('form-prod-name').value;
-                const sku = document.getElementById('form-prod-sku').value;
-                const category = document.getElementById('form-prod-category').value;
-                const cost = parseFloat(document.getElementById('form-prod-cost').value) || 0;
-                const price = parseFloat(document.getElementById('form-prod-price').value) || 0;
-                const stock = parseInt(document.getElementById('form-prod-stock').value) || 0;
-                const img = document.getElementById('form-prod-img').value || '📦';
+                try {
+                    const id = document.getElementById('form-prod-id').value;
+                    const name = document.getElementById('form-prod-name').value.trim();
+                    const sku = document.getElementById('form-prod-sku').value.trim();
+                    const category = document.getElementById('form-prod-category').value;
+                    const cost = parseFloat(document.getElementById('form-prod-cost').value) || 0;
+                    const price = parseFloat(document.getElementById('form-prod-price').value) || 0;
+                    const stock = parseInt(document.getElementById('form-prod-stock').value) || 0;
+                    const img = document.getElementById('form-prod-img').value || '📦';
 
-                if (id) {
-                    const idx = this.products.findIndex(p => p.id === id);
-                    if (idx !== -1) {
-                        this.products[idx] = { id, name, sku, category, cost, price, stock, img };
+                    if (!name) {
+                        this.showToast('Nama produk wajib diisi!', 'error');
+                        return;
                     }
-                } else {
-                    this.products.unshift({ id: 'p-' + Date.now(), name, sku, category, cost, price, stock, img });
-                }
 
-                this.saveToStorage();
-                this.closeModal('modal-product-form');
-                this.renderProductTable();
-                this.showToast('Data produk tersimpan!', 'success');
+                    let productObj;
+                    if (id) {
+                        const idx = this.products.findIndex(p => p.id === id);
+                        if (idx !== -1) {
+                            this.products[idx] = { id, name, sku, category, cost, price, stock, img };
+                            productObj = this.products[idx];
+                        } else {
+                            productObj = { id: 'p-' + Date.now(), name, sku, category, cost, price, stock, img };
+                            this.products.unshift(productObj);
+                        }
+                    } else {
+                        productObj = { id: 'p-' + Date.now(), name, sku, category, cost, price, stock, img };
+                        this.products.unshift(productObj);
+                    }
+
+                    this.saveToStorage();
+
+                    if (this.sheetUrl && !this.sheetUrl.includes('GANTI_DENGAN_ID')) {
+                        fetch(this.sheetUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'saveProduct',
+                                product: productObj
+                            })
+                        }).catch(err => console.warn("Backend sync error:", err));
+                    }
+
+                    this.closeModal('modal-product-form');
+                    this.renderProductTable();
+                    if (this.activePage === 'pos') this.initPOSPage();
+                    if (this.activePage === 'dashboard') this.renderDashboardPage();
+                    this.showToast(`Produk "${name}" berhasil disimpan!`, 'success');
+                } catch (err) {
+                    console.error("Gagal simpan produk:", err);
+                    this.showToast('Gagal menyimpan produk: ' + err.message, 'error');
+                }
             }
 
             handlePhotoUpload(input) {
@@ -1241,16 +1281,42 @@
                     const file = input.files[0];
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        const base64Data = e.target.result;
-                        document.getElementById('form-prod-img').value = base64Data;
-                        
-                        const previewImg = document.getElementById('photo-preview-img');
-                        const previewContainer = document.getElementById('photo-preview-container');
-                        if (previewImg && previewContainer) {
-                            previewImg.src = base64Data;
-                            previewContainer.classList.remove('hidden');
-                        }
-                        this.showToast('Foto kemasan siap disimpan!', 'info');
+                        const tempImg = new Image();
+                        tempImg.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 300;
+                            const MAX_HEIGHT = 300;
+                            let width = tempImg.width;
+                            let height = tempImg.height;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(tempImg, 0, 0, width, height);
+
+                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                            document.getElementById('form-prod-img').value = compressedBase64;
+                            
+                            const previewImg = document.getElementById('photo-preview-img');
+                            const previewContainer = document.getElementById('photo-preview-container');
+                            if (previewImg && previewContainer) {
+                                previewImg.src = compressedBase64;
+                                previewContainer.classList.remove('hidden');
+                            }
+                            this.showToast('Foto produk berhasil diproses!', 'info');
+                        };
+                        tempImg.src = e.target.result;
                     };
                     reader.readAsDataURL(file);
                 }
