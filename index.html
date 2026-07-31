@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1198/1198296.png">
     
-    <!-- Tailwind CSS -->
+    <!-- External CSS & Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Phosphor Icons -->
@@ -29,11 +29,11 @@
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         tealApp: {
-                            100: '#C8E6E2', // Soft Light Aqua
-                            200: '#9ED5D1', // Soft Teal
-                            300: '#63C1BB', // Medium Teal
-                            500: '#3A9295', // Primary Teal
-                            700: '#105F68'  // Deep Slate Teal
+                            100: '#C8E6E2',
+                            200: '#9ED5D1',
+                            300: '#63C1BB',
+                            500: '#3A9295',
+                            700: '#105F68'
                         },
                         payBg: '#EAF5F4',
                         payCard: '#FFFFFF',
@@ -44,7 +44,6 @@
                         'pay-sm': '0 2px 10px rgba(16, 95, 104, 0.06)',
                         'pay-md': '0 8px 24px rgba(16, 95, 104, 0.10)',
                         'pay-lg': '0 16px 36px rgba(16, 95, 104, 0.16)',
-                        'floating-dock': '0 10px 30px rgba(16, 95, 104, 0.25)',
                         'btn-shadow': '0 6px 16px rgba(58, 146, 149, 0.35)'
                     }
                 }
@@ -68,7 +67,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Thermal Struk Print */
         @media print {
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt * { visibility: visible; }
@@ -84,14 +82,14 @@
         <!-- HEADER APP BAR -->
         <header id="app-header" class="px-5 pt-4 pb-3 flex justify-between items-center bg-payBg z-20 shrink-0 border-b border-tealApp-100/50">
             <div class="flex items-center space-x-3">
-                <button onclick="app.navigateTo('landing')" class="w-9 h-9 rounded-full bg-tealApp-100/60 text-tealApp-700 flex items-center justify-center font-bold shadow-pay-sm">
+                <button onclick="app.navigateTo('dashboard')" class="w-9 h-9 rounded-full bg-tealApp-100/60 text-tealApp-700 flex items-center justify-center font-bold shadow-pay-sm">
                     <i class="ph ph-storefront text-lg"></i>
                 </button>
                 <div>
                     <h1 class="font-extrabold text-sm text-payDark leading-tight flex items-center gap-1">
                         <span id="user-display-name">Warung POS AI</span>
                     </h1>
-                    <p class="text-[10px] text-payGray font-semibold" id="user-display-shop">Kasir Digital Digital</p>
+                    <p class="text-[10px] text-payGray font-semibold" id="user-display-shop">Kasir Digital</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -101,6 +99,9 @@
                 <button onclick="app.navigateTo('settings')" class="w-8 h-8 rounded-full bg-payCard text-payDark border border-tealApp-100 flex items-center justify-center shadow-pay-sm active:scale-95 transition">
                     <i class="ph ph-gear text-base"></i>
                 </button>
+                <button id="btn-header-logout" onclick="app.handleLogout()" title="Keluar Akun" class="w-8 h-8 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shadow-pay-sm active:scale-95 transition">
+                    <i class="ph ph-sign-out text-base"></i>
+                </button>
             </div>
         </header>
 
@@ -108,7 +109,7 @@
         <main class="flex-1 overflow-y-auto px-4 py-3 no-scrollbar space-y-4" id="main-scroll-area">
             
             <!-- SCREEN 0: LANDING PAGE -->
-            <section id="page-landing" class="page-enter space-y-4 pt-2">
+            <section id="page-landing" class="page-enter space-y-4 pt-2 hidden">
                 <div class="bg-gradient-to-br from-tealApp-700 to-tealApp-500 p-5 rounded-3xl text-white shadow-pay-lg relative overflow-hidden">
                     <div class="relative z-10 space-y-2">
                         <span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-wider text-tealApp-100">AI Powered POS</span>
@@ -143,234 +144,262 @@
                 </div>
             </section>
 
-            <!-- SCREEN 0.5: REGISTER PAGE (SIMPLIFIED: USERNAME & PASSWORD) -->
-            <section id="page-register" class="page-enter space-y-3 hidden pt-2">
-                <div class="flex items-center space-x-2 mb-2">
-                    <button onclick="app.navigateTo('landing')" class="w-8 h-8 rounded-full bg-white border border-tealApp-200 text-payDark flex items-center justify-center shadow-pay-sm">
-                        <i class="ph ph-arrow-left text-base"></i>
-                    </button>
-                    <h2 class="font-black text-sm text-payDark">Pendaftaran User Baru</h2>
+            <!-- SCREEN 0.5: REGISTER PAGE -->
+            <section id="page-register" class="page-enter space-y-4 hidden pt-6 pb-4">
+                <div class="text-center space-y-2 mb-2">
+                    <div class="w-14 h-14 rounded-2xl bg-tealApp-500 text-white flex items-center justify-center mx-auto shadow-pay-md">
+                        <i class="ph ph-user-plus text-2xl"></i>
+                    </div>
+                    <h2 class="font-extrabold text-base text-payDark">Pendaftaran Akun Baru</h2>
+                    <p class="text-[11px] text-payGray">Buat akun untuk memulai pencatatan kasir digital warung Anda.</p>
                 </div>
 
                 <div class="bg-payCard p-4 rounded-3xl border border-tealApp-200 shadow-pay-md space-y-3">
-                    <form onsubmit="event.preventDefault(); app.handleRegister();" class="space-y-2.5 text-[11px]">
+                    <form onsubmit="event.preventDefault(); app.handleRegister();" class="space-y-3 text-[11px]">
                         <div>
                             <label class="text-payGray font-bold block mb-1">Username Pemilik / Kasir</label>
-                            <input type="text" id="reg-username" required placeholder="Misal: jamalnoor" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2.5 font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            <div class="relative">
+                                <i class="ph ph-user absolute left-3 top-2.5 text-payGray text-sm"></i>
+                                <input type="text" id="reg-username" required placeholder="Misal: jamalnoor" class="w-full pl-8 pr-3 py-2 bg-slate-100 border border-tealApp-200 rounded-xl font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            </div>
                         </div>
                         <div>
                             <label class="text-payGray font-bold block mb-1">Password</label>
-                            <input type="password" id="reg-password" required placeholder="••••••••" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2.5 font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            <div class="relative">
+                                <i class="ph ph-lock-key absolute left-3 top-2.5 text-payGray text-sm"></i>
+                                <input type="password" id="reg-password" required placeholder="••••••••" class="w-full pl-8 pr-3 py-2 bg-slate-100 border border-tealApp-200 rounded-xl font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            </div>
                         </div>
 
-                        <div class="p-3 bg-tealApp-100 rounded-2xl border border-tealApp-200 text-[10px] space-y-1">
+                        <div class="p-3 bg-tealApp-100/70 rounded-2xl border border-tealApp-200 text-[10px] space-y-1">
                             <span class="font-extrabold text-tealApp-700 block">⚡ Fresh Start Data</span>
                             <p class="text-payDark font-medium">Pendaftaran user baru otomatis memulai pencatatan omzet toko dari nol (Rp 0) & tersimpan di cloud.</p>
                         </div>
 
-                        <button type="submit" class="w-full bg-tealApp-500 text-white font-black py-3 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition mt-2">
-                            Buat Akun & Masuk Aplikasi
+                        <button type="submit" class="w-full bg-tealApp-500 text-white font-black py-2.5 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition flex items-center justify-center space-x-2 mt-2">
+                            <span>Buat Akun & Masuk Aplikasi</span>
+                            <i class="ph ph-check-circle text-sm"></i>
                         </button>
                     </form>
+                </div>
+
+                <div class="text-center pt-1">
+                    <button onclick="app.navigateTo('landing')" class="text-xs text-tealApp-700 font-bold hover:underline">
+                        ← Kembali ke Halaman Utama
+                    </button>
                 </div>
             </section>
 
             <!-- SCREEN 0.6: LOGIN PAGE -->
-            <section id="page-login" class="page-enter space-y-3 hidden pt-2">
-                <div class="flex items-center space-x-2 mb-2">
-                    <button onclick="app.navigateTo('landing')" class="w-8 h-8 rounded-full bg-white border border-tealApp-200 text-payDark flex items-center justify-center shadow-pay-sm">
-                        <i class="ph ph-arrow-left text-base"></i>
-                    </button>
-                    <h2 class="font-black text-sm text-payDark">Masuk Akun Warung</h2>
+            <section id="page-login" class="page-enter space-y-4 hidden pt-6 pb-4">
+                <div class="text-center space-y-2 mb-2">
+                    <div class="w-14 h-14 rounded-2xl bg-tealApp-700 text-white flex items-center justify-center mx-auto shadow-pay-md">
+                        <i class="ph ph-storefront text-2xl"></i>
+                    </div>
+                    <h2 class="font-extrabold text-base text-payDark">Masuk Akun Kasir</h2>
+                    <p class="text-[11px] text-payGray">Silakan masuk dengan akun username dan password warung Anda.</p>
                 </div>
 
                 <div class="bg-payCard p-4 rounded-3xl border border-tealApp-200 shadow-pay-md space-y-3">
                     <form onsubmit="event.preventDefault(); app.handleLogin();" class="space-y-3 text-[11px]">
                         <div>
                             <label class="text-payGray font-bold block mb-1">Username</label>
-                            <input type="text" id="login-username" required placeholder="Masukkan username" value="jamalnoor" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2.5 font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            <div class="relative">
+                                <i class="ph ph-user absolute left-3 top-2.5 text-payGray text-sm"></i>
+                                <input type="text" id="login-username" required placeholder="Masukkan username" value="jamalnoor" class="w-full pl-8 pr-3 py-2 bg-slate-100 border border-tealApp-200 rounded-xl font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            </div>
                         </div>
                         <div>
                             <label class="text-payGray font-bold block mb-1">Password</label>
-                            <input type="password" id="login-password" required value="password123" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2.5 font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            <div class="relative">
+                                <i class="ph ph-lock-key absolute left-3 top-2.5 text-payGray text-sm"></i>
+                                <input type="password" id="login-password" required value="password123" placeholder="••••••••" class="w-full pl-8 pr-3 py-2 bg-slate-100 border border-tealApp-200 rounded-xl font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500">
+                            </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-tealApp-500 text-white font-black py-3 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition">
-                            Masuk ke Aplikasi Kasir
+                        <button type="submit" class="w-full bg-tealApp-500 text-white font-black py-2.5 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition flex items-center justify-center space-x-2">
+                            <span>Masuk ke Aplikasi Kasir</span>
+                            <i class="ph ph-arrow-right font-bold text-sm"></i>
                         </button>
                     </form>
                 </div>
+
+                <div class="text-center pt-1">
+                    <button onclick="app.navigateTo('landing')" class="text-xs text-tealApp-700 font-bold hover:underline">
+                        ← Kembali ke Halaman Utama
+                    </button>
+                </div>
             </section>
 
-            <!-- SCREEN 1: DASHBOARD MAIN -->
-            <section id="page-dashboard" class="page-enter space-y-3 hidden">
-                <!-- HERO CARD OMZET -->
-                <div class="bg-gradient-to-br from-tealApp-700 via-tealApp-500 to-tealApp-300 p-4 rounded-3xl text-white shadow-pay-md relative overflow-hidden">
+            <!-- SCREEN 1: DASHBOARD PAGE -->
+            <section id="page-dashboard" class="page-enter space-y-3">
+                <!-- HERO TOTAL OMZET CARD -->
+                <div class="bg-gradient-to-br from-tealApp-700 to-tealApp-500 p-4 rounded-3xl text-white shadow-pay-md relative overflow-hidden">
                     <div class="flex justify-between items-start mb-2">
                         <div>
-                            <span class="text-[10px] uppercase font-bold text-tealApp-100 tracking-wider">Total Omzet Hari Ini</span>
-                            <h2 class="text-2xl font-black mt-0.5 tracking-tight" id="dash-omzet-hero">Rp 12.450.000</h2>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-tealApp-100 block">TOTAL OMZET HARI INI</span>
+                            <h2 class="text-2xl font-black mt-0.5" id="dash-omzet-hero">Rp 0</h2>
                         </div>
-                        <span class="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-xl text-[10px] font-bold text-white flex items-center">
-                            <i class="ph ph-trend-up mr-1"></i> +18.4%
+                        <span class="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-extrabold flex items-center gap-1">
+                            <i class="ph ph-trend-up"></i> +18.4%
                         </span>
                     </div>
-                    <div class="pt-2 border-t border-white/20 flex justify-between items-center text-[10px] text-tealApp-100 font-medium">
-                        <span>Sync Status: Active</span>
-                        <span class="font-bold text-white">Target Bulan Ini: 85%</span>
+                    <div class="pt-2 border-t border-white/20 flex justify-between items-center text-[10px] text-tealApp-100">
+                        <span class="flex items-center gap-1"><i class="ph ph-check-circle text-xs text-tealApp-200"></i> Sync: Sheets & Drive Active</span>
+                        <span class="font-bold">Hari Ini</span>
                     </div>
                 </div>
 
                 <!-- QUICK ACTIONS ROW -->
-                <div class="grid grid-cols-4 gap-2 text-center text-[11px] font-bold text-payDark">
-                    <button onclick="app.navigateTo('pos')" class="bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm hover:border-tealApp-500 flex flex-col items-center space-y-1 active:scale-95 transition">
-                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center text-lg"><i class="ph ph-shopping-cart font-bold"></i></div>
-                        <span>Kasir</span>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="app.navigateTo('pos')" class="bg-payCard p-2.5 rounded-2xl border border-tealApp-200/60 shadow-pay-sm flex flex-col items-center space-y-1 active:scale-95 transition">
+                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center">
+                            <i class="ph ph-shopping-cart text-lg"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-payDark">Kasir</span>
                     </button>
-                    <button onclick="app.startScanner('pos')" class="bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm hover:border-tealApp-500 flex flex-col items-center space-y-1 active:scale-95 transition">
-                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center text-lg"><i class="ph ph-barcode font-bold"></i></div>
-                        <span>Scan SKU</span>
+                    <button onclick="app.startScanner('pos')" class="bg-payCard p-2.5 rounded-2xl border border-tealApp-200/60 shadow-pay-sm flex flex-col items-center space-y-1 active:scale-95 transition">
+                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center">
+                            <i class="ph ph-barcode text-lg"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-payDark">Scan SKU</span>
                     </button>
-                    <button onclick="app.navigateTo('products')" class="bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm hover:border-tealApp-500 flex flex-col items-center space-y-1 active:scale-95 transition">
-                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center text-lg"><i class="ph ph-package font-bold"></i></div>
-                        <span>Produk</span>
+                    <button onclick="app.navigateTo('products')" class="bg-payCard p-2.5 rounded-2xl border border-tealApp-200/60 shadow-pay-sm flex flex-col items-center space-y-1 active:scale-95 transition">
+                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center">
+                            <i class="ph ph-package text-lg"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-payDark">Produk</span>
                     </button>
-                    <button onclick="app.navigateTo('reports')" class="bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm hover:border-tealApp-500 flex flex-col items-center space-y-1 active:scale-95 transition">
-                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center text-lg"><i class="ph ph-chart-line-up font-bold"></i></div>
-                        <span>Laporan</span>
+                    <button onclick="app.navigateTo('reports')" class="bg-payCard p-2.5 rounded-2xl border border-tealApp-200/60 shadow-pay-sm flex flex-col items-center space-y-1 active:scale-95 transition">
+                        <div class="w-9 h-9 rounded-xl bg-tealApp-100 text-tealApp-700 flex items-center justify-center">
+                            <i class="ph ph-chart-line-up text-lg"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-payDark">Laporan</span>
                     </button>
                 </div>
 
                 <!-- KPI METRICS GRID -->
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-payCard p-3.5 rounded-2xl border border-tealApp-100 shadow-pay-sm">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] text-payGray font-bold">Laba Bersih</span>
-                            <i class="ph ph-wallet text-tealApp-500 text-base"></i>
-                        </div>
-                        <h3 class="font-extrabold text-sm text-payDark" id="dash-laba">Rp 2.850.000</h3>
-                        <span class="text-[9px] text-emerald-600 font-bold mt-1 inline-block">↑ 16.7% vs kemarin</span>
+                    <div class="bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm">
+                        <span class="text-[10px] text-payGray font-bold block mb-1">ESTIMASI LABA BERSIH</span>
+                        <h3 class="text-base font-black text-emerald-600" id="dash-laba">Rp 0</h3>
+                        <p class="text-[9px] text-payGray mt-0.5">Laba kotor dikurangi HPP</p>
                     </div>
-                    <div class="bg-payCard p-3.5 rounded-2xl border border-tealApp-100 shadow-pay-sm">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] text-payGray font-bold">Total Transaksi</span>
-                            <i class="ph ph-receipt text-tealApp-500 text-base"></i>
-                        </div>
-                        <h3 class="font-extrabold text-sm text-payDark" id="dash-tx-count">356 TRX</h3>
-                        <span class="text-[9px] text-tealApp-700 font-bold mt-1 inline-block">Margin ~22.89%</span>
+                    <div class="bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm">
+                        <span class="text-[10px] text-payGray font-bold block mb-1">TOTAL TRANSAKSI</span>
+                        <h3 class="text-base font-black text-payDark" id="dash-tx-count">0 TRX</h3>
+                        <p class="text-[9px] text-payGray mt-0.5">Margin rata-rata 22.8%</p>
                     </div>
                 </div>
 
-                <!-- CHART PENJUALAN -->
+                <!-- GRAPH / CHART CARD -->
                 <div class="bg-payCard p-3.5 rounded-2xl border border-tealApp-100 shadow-pay-sm space-y-2">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-xs text-payDark">Tren Omzet Penjualan</h3>
-                        <span class="text-[10px] text-payGray font-semibold">7 Hari Terakhir</span>
+                        <h3 class="font-extrabold text-xs text-payDark flex items-center gap-1.5">
+                            <i class="ph ph-chart-line-up text-tealApp-500"></i>Tren Penjualan 7 Hari
+                        </h3>
+                        <span class="text-[9px] bg-tealApp-100 text-tealApp-700 px-2 py-0.5 rounded-full font-bold">Minggu Ini</span>
                     </div>
-                    <div class="h-36 w-full"><canvas id="salesChart"></canvas></div>
+                    <div class="h-32 w-full relative">
+                        <canvas id="salesChart"></canvas>
+                    </div>
                 </div>
 
-                <!-- AI DEMAND ANALYSIS: FAST VS SLOW MOVING -->
-                <div class="bg-payCard p-4 rounded-3xl border border-tealApp-200 shadow-pay-md space-y-3">
-                    <div class="flex items-center justify-between border-b border-tealApp-100 pb-2">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-7 h-7 rounded-lg bg-tealApp-100 text-tealApp-700 flex items-center justify-center text-base"><i class="ph ph-sparkle-fill"></i></div>
-                            <div>
-                                <h3 class="font-black text-xs text-payDark leading-tight">AI Demand Analysis</h3>
-                                <p class="text-[9px] text-payGray font-medium">Analisis Produk Peminat Tinggi vs Sepi</p>
-                            </div>
-                        </div>
+                <!-- AI DEMAND ANALYSIS CARD -->
+                <div class="bg-payCard p-3.5 rounded-2xl border border-tealApp-200/80 shadow-pay-sm space-y-2">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-extrabold text-xs text-payDark flex items-center gap-1.5">
+                            <i class="ph ph-brain text-tealApp-500 text-sm"></i>AI Demand Analysis
+                        </h3>
+                        <span class="text-[9px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">Realtime Stock</span>
                     </div>
-
                     <div class="grid grid-cols-2 gap-2 text-[10px]">
-                        <div class="p-2.5 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-1">
-                            <span class="font-black text-emerald-800 flex items-center"><i class="ph ph-fire mr-1"></i> Banyak Peminat</span>
-                            <div id="dash-fast-moving" class="space-y-1 text-payDark font-semibold">
-                                <!-- Injected JS -->
-                            </div>
+                        <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 space-y-1">
+                            <span class="font-extrabold text-emerald-800 flex items-center gap-1"><i class="ph ph-fire text-xs"></i> Fast Moving (Laris)</span>
+                            <div id="dash-fast-moving" class="space-y-0.5 text-emerald-900 font-medium"></div>
                         </div>
-                        <div class="p-2.5 bg-rose-50 rounded-2xl border border-rose-200 space-y-1">
-                            <span class="font-black text-rose-800 flex items-center"><i class="ph ph-snowflake mr-1"></i> Kurang Peminat</span>
-                            <div id="dash-slow-moving" class="space-y-1 text-payDark font-semibold">
-                                <!-- Injected JS -->
-                            </div>
+                        <div class="p-2.5 bg-rose-50 rounded-xl border border-rose-100 space-y-1">
+                            <span class="font-extrabold text-rose-800 flex items-center gap-1"><i class="ph ph-snowflake text-xs"></i> Slow Moving (Sepi)</span>
+                            <div id="dash-slow-moving" class="space-y-0.5 text-rose-900 font-medium"></div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- SCREEN 2: POS KASIR -->
+            <!-- SCREEN 2: POS CASHIER PAGE -->
             <section id="page-pos" class="page-enter space-y-3 hidden">
-                <div class="flex space-x-2">
+                <div class="flex gap-2">
                     <div class="relative flex-1">
                         <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-payGray text-sm"></i>
-                        <input type="text" id="pos-search" oninput="app.filterPOSProducts()" placeholder="Cari barang / SKU..." class="w-full pl-8 pr-3 py-2 bg-payCard border border-tealApp-200 rounded-xl text-xs font-bold text-payDark focus:outline-none focus:ring-2 focus:ring-tealApp-500 shadow-pay-sm">
+                        <input type="text" id="pos-search" oninput="app.filterPOSProducts(this.value)" placeholder="Cari nama atau barcode..." class="w-full pl-8 pr-3 py-2 bg-payCard border border-tealApp-200 rounded-xl text-xs font-bold text-payDark focus:outline-none">
                     </div>
-                    <button onclick="app.startScanner('pos')" class="px-3 bg-tealApp-500 text-white rounded-xl shadow-btn-shadow flex items-center justify-center text-base font-bold active:scale-95 transition">
-                        <i class="ph ph-barcode"></i>
+                    <button onclick="app.startScanner('pos')" class="px-3 bg-tealApp-500 text-white rounded-xl shadow-btn-shadow flex items-center justify-center font-bold">
+                        <i class="ph ph-barcode text-lg"></i>
                     </button>
                 </div>
 
-                <div class="flex space-x-1.5 overflow-x-auto no-scrollbar pb-1 text-[11px]" id="pos-categories">
-                    <!-- Category pills via JS -->
+                <!-- CATEGORIES SCROLL -->
+                <div class="flex space-x-1.5 overflow-x-auto no-scrollbar py-0.5 text-[10px]" id="pos-categories">
+                    <!-- Dynamic Pills -->
                 </div>
 
-                <div class="grid grid-cols-2 gap-2.5" id="pos-products">
-                    <!-- Product catalog cards injected via JS -->
+                <!-- PRODUCTS GRID -->
+                <div class="grid grid-cols-2 gap-2.5 pt-1" id="pos-products">
+                    <!-- Dynamic Product Cards -->
                 </div>
             </section>
 
-            <!-- SCREEN 3: PRODUCT CATALOG (DATA PRODUK) -->
+            <!-- SCREEN 3: PRODUCTS MANAGEMENT PAGE -->
             <section id="page-products" class="page-enter space-y-3 hidden">
                 <div class="flex justify-between items-center">
-                    <input type="text" id="prod-search" oninput="app.filterProductTable()" placeholder="Cari nama/SKU..." class="w-2/3 bg-payCard border border-tealApp-200 rounded-xl px-3 py-2 text-xs font-bold text-payDark focus:outline-none shadow-pay-sm">
-                    <button onclick="app.openProductModal()" class="bg-tealApp-500 text-white px-3 py-2 rounded-xl text-xs font-black shadow-btn-shadow flex items-center space-x-1 active:scale-95 transition">
-                        <i class="ph ph-plus-circle text-sm"></i><span>Tambah</span>
+                    <h2 class="font-extrabold text-xs text-payDark">Katalog & Stok Barang</h2>
+                    <button onclick="app.openProductModal()" class="bg-tealApp-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-xl shadow-btn-shadow flex items-center space-x-1">
+                        <i class="ph ph-plus-circle text-sm"></i><span>Tambah Produk</span>
                     </button>
                 </div>
 
-                <div class="bg-payCard rounded-2xl border border-tealApp-100 shadow-pay-sm overflow-hidden text-[11px]">
-                    <div class="divide-y divide-tealApp-100" id="product-list-container">
-                        <!-- Products list injected via JS -->
-                    </div>
+                <input type="text" id="prod-search" oninput="app.filterProductTable()" placeholder="Cari barang atau SKU..." class="w-full px-3 py-2 bg-payCard border border-tealApp-200 rounded-xl text-xs font-bold text-payDark focus:outline-none">
+
+                <div class="bg-payCard rounded-2xl border border-tealApp-100 shadow-pay-sm divide-y divide-tealApp-100/60 text-xs" id="product-list-container">
+                    <!-- Dynamic Product List -->
                 </div>
             </section>
 
-            <!-- SCREEN 4: REPORTS (LAPORAN) -->
+            <!-- SCREEN 4: REPORTS PAGE -->
             <section id="page-reports" class="page-enter space-y-3 hidden">
-                <div class="flex justify-between items-center bg-payCard p-3 rounded-2xl border border-tealApp-100 shadow-pay-sm">
-                    <span class="text-xs font-bold text-payDark">Periode Laporan</span>
-                    <button onclick="app.exportReportsCSV()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-pay-sm flex items-center space-x-1">
-                        <i class="ph ph-download-simple"></i><span>Export CSV</span>
+                <div class="flex justify-between items-center">
+                    <h2 class="font-extrabold text-xs text-payDark">Laporan Penjualan</h2>
+                    <button onclick="app.exportReportsCSV()" class="bg-tealApp-100 text-tealApp-700 font-bold text-[10px] px-3 py-1.5 rounded-xl border border-tealApp-200 flex items-center space-x-1">
+                        <i class="ph ph-download-simple text-sm"></i><span>Ekspor CSV</span>
                     </button>
                 </div>
 
-                <div class="bg-payCard rounded-2xl border border-tealApp-100 shadow-pay-sm overflow-hidden text-[11px]">
-                    <div class="p-3 border-b border-tealApp-100 font-bold text-payDark">Riwayat Transaksi Penjualan</div>
-                    <div class="divide-y divide-tealApp-100" id="reports-list-container">
-                        <!-- Reports injected via JS -->
-                    </div>
+                <div class="bg-payCard rounded-2xl border border-tealApp-100 shadow-pay-sm divide-y divide-tealApp-100/60 text-xs" id="reports-list-container">
+                    <!-- Dynamic Transactions List -->
                 </div>
             </section>
 
-            <!-- SCREEN 5: SETTINGS -->
+            <!-- SCREEN 5: SETTINGS PAGE -->
             <section id="page-settings" class="page-enter space-y-3 hidden">
-                <div class="bg-payCard p-4 rounded-3xl border border-tealApp-200 shadow-pay-md space-y-3 text-[11px]">
-                    <h3 class="font-black text-xs text-payDark border-b border-tealApp-100 pb-2">Profil Warung</h3>
+                <h2 class="font-extrabold text-xs text-payDark">Pengaturan Warung</h2>
+
+                <div class="bg-payCard p-4 rounded-3xl border border-tealApp-200 shadow-pay-sm space-y-3 text-[11px]">
                     <div>
                         <label class="text-payGray font-bold block mb-1">Nama Toko / Warung</label>
-                        <input type="text" id="set-store-name" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2 font-bold text-payDark focus:outline-none">
+                        <input type="text" id="set-store-name" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2.5 font-bold text-payDark focus:outline-none">
                     </div>
                     <div>
-                        <label class="text-payGray font-bold block mb-1">Nomor Telepon / WA</label>
-                        <input type="text" id="set-store-phone" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2 font-bold text-payDark focus:outline-none">
+                        <label class="text-payGray font-bold block mb-1">Google Web App URL (Backend Apps Script)</label>
+                        <input type="text" id="set-appscript-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2.5 font-mono text-[10px] text-payDark focus:outline-none">
                     </div>
-                    <div>
-                        <label class="text-payGray font-bold block mb-1">URL Google Apps Script (Web App Backend)</label>
-                        <input type="text" id="set-appscript-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-100 border border-tealApp-200 rounded-xl p-2 font-mono text-[10px] text-payDark focus:outline-none">
-                    </div>
-                    <button onclick="app.saveSettings()" class="w-full bg-tealApp-500 text-white font-black py-2.5 rounded-2xl shadow-btn-shadow active:scale-95 transition">
+
+                    <button onclick="app.saveSettings()" class="w-full bg-tealApp-500 text-white font-black py-2.5 rounded-2xl shadow-btn-shadow text-xs active:scale-98 transition">
                         Simpan Pengaturan
+                    </button>
+
+                    <button onclick="app.handleLogout()" class="w-full bg-rose-500 text-white font-black py-2.5 rounded-2xl shadow-md text-xs active:scale-98 transition flex items-center justify-center space-x-1 mt-2">
+                        <i class="ph ph-sign-out text-base"></i>
+                        <span>Keluar / Logout Akun</span>
                     </button>
                 </div>
             </section>
@@ -390,7 +419,7 @@
         </div>
 
         <!-- FLOATING BOTTOM NAVIGATION DOCK -->
-        <nav class="bg-payCard border-t border-tealApp-100 px-4 py-2 flex justify-around items-center z-30 shrink-0">
+        <nav class="bg-payCard border-t border-tealApp-100 px-4 py-2 flex justify-around items-center z-30 shrink-0 hidden">
             <button onclick="app.navigateTo('dashboard')" id="nav-dashboard" class="flex flex-col items-center text-tealApp-500 font-bold text-[10px]">
                 <i class="ph ph-house text-lg"></i><span>Beranda</span>
             </button>
@@ -550,7 +579,6 @@
     </div>
 
     <script>
-        // CONFIGURATION CONSTANTS
         const WEB_APP_EXEC_URL = 'https://script.google.com/macros/s/AKfycbw26ZKzmv7GhZfhtL92M2dTn6pCo9XY_uuyVaTAQv2gnknlbFpDwdxE77jPCJWKtFE2/exec';
 
         const INITIAL_PRODUCTS = [
@@ -570,7 +598,7 @@
                 this.sheetUrl = localStorage.getItem('wpai_sheet_url') || WEB_APP_EXEC_URL;
                 
                 this.cart = [];
-                this.activePage = 'landing';
+                this.activePage = 'dashboard';
                 this.scanTarget = 'pos';
                 this.paymentMethod = 'cash';
                 this.html5QrcodeScanner = null;
@@ -613,7 +641,7 @@
                 const username = document.getElementById('reg-username')?.value.trim() || 'user';
                 const password = document.getElementById('reg-password')?.value || '123456';
 
-                // Reset data untuk user baru (Mulai dari nol / fresh start)
+                // Fresh start for new user
                 this.user = { name: username, shop: `Warung ${username}`, username };
                 this.transactions = [];
                 this.cart = [];
@@ -651,12 +679,35 @@
                 this.navigateTo('dashboard');
             }
 
+            handleLogout() {
+                this.user = { name: '', shop: '', username: '' };
+                this.cart = [];
+                localStorage.removeItem('wpai_user');
+                this.updateUserUI();
+                this.showToast('Berhasil keluar dari akun 👋', 'info');
+                this.navigateTo('landing');
+            }
+
             navigateTo(pageId) {
                 document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
                 const target = document.getElementById(`page-${pageId}`);
                 if (target) target.classList.remove('hidden');
 
                 this.activePage = pageId;
+
+                const navDock = document.querySelector('nav');
+                const appHeader = document.getElementById('app-header');
+                const logoutBtn = document.getElementById('btn-header-logout');
+
+                // Hide top header & bottom nav on landing, register, and login pages
+                if (['landing', 'register', 'login'].includes(pageId)) {
+                    if (navDock) navDock.classList.add('hidden');
+                    if (appHeader) appHeader.classList.add('hidden');
+                } else {
+                    if (navDock) navDock.classList.remove('hidden');
+                    if (appHeader) appHeader.classList.remove('hidden');
+                    if (logoutBtn) logoutBtn.classList.remove('hidden');
+                }
 
                 const navItems = ['dashboard', 'pos', 'products', 'reports'];
                 navItems.forEach(item => {
@@ -813,7 +864,7 @@
             filterPOSProducts(query = '', category = '') {
                 query = (query || document.getElementById('pos-search')?.value || '').toLowerCase();
                 const filtered = this.products.filter(p => 
-                    (p.name.toLowerCase().includes(query) || p.sku.includes(query)) &&
+                    (p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query)) &&
                     (category ? p.category === category : true)
                 );
                 this.renderPOSProducts(filtered);
@@ -824,13 +875,16 @@
 
                 const existing = this.cart.find(i => i.id === product.id);
                 if (existing) {
+                    if (existing.qty >= product.stock) {
+                        return this.showToast(`Stok ${product.name} terbatas! Maksimal ${product.stock}`, 'error');
+                    }
                     existing.qty++;
                 } else {
                     this.cart.push({ ...product, qty: 1 });
                 }
 
                 this.updateCartUI();
-                this.showToast(`${product.name} ditambah ke keranjang`, 'success');
+                this.showToast(`🛒 ${product.name} dimasukkan ke keranjang`, 'success');
             }
 
             updateCartUI() {
@@ -1100,6 +1154,9 @@
 
             startScanner(target = 'pos') {
                 this.scanTarget = target;
+                if (target === 'pos') {
+                    this.navigateTo('pos');
+                }
                 this.openModal('modal-scanner');
 
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1107,7 +1164,7 @@
                     return;
                 }
 
-                this.html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 200, height: 200 } }, false);
+                this.html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 220, height: 220 } }, false);
                 this.html5QrcodeScanner.render((scannedText) => {
                     this.stopScanner();
                     if (this.scanTarget === 'sku') {
@@ -1115,12 +1172,11 @@
                         if (skuInput) skuInput.value = scannedText;
                         this.showToast(`SKU Barcode: ${scannedText}`, 'success');
                     } else {
-                        const p = this.products.find(prod => prod.sku === scannedText);
+                        const p = this.products.find(prod => prod.sku.toLowerCase() === scannedText.toLowerCase());
                         if (p) {
                             this.addToCart(p);
-                            this.showToast(`Berhasil pindaikan ${p.name}`, 'success');
                         } else {
-                            this.showToast(`SKU ${scannedText} belum terdaftar`, 'error');
+                            this.showToast(`SKU Barcode ${scannedText} belum terdaftar`, 'error');
                         }
                     }
                 }, () => {});
@@ -1152,7 +1208,6 @@
             }
         }
 
-        // INITIALIZE APPLICATION
         window.onload = () => {
             window.app = new WarungApp();
         };
